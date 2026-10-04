@@ -20,6 +20,17 @@ First Command Waypoints + branded release. Includes the Fabric 26.3 port, native
 
 ## Publication status
 
-Not yet submitted. Modrinth's content rules, updated August 13, 2026, require disclosure of substantial AI-assisted code and project descriptions and prohibit public projects primarily composed of AI output. This fork includes substantial Codex-authored enhancements; establish eligibility with Modrinth before requesting public publication, and apply the required disclosure. Do not omit attribution or represent a draft as a public release.
+Submitted for Modrinth moderation on October 4, 2026. Status at submission: **processing**, requested visibility: public. Submission is not an approval or a public listing.
+
+- Project: https://modrinth.com/mod/command-waypoints-plus
+- Project ID: `O3duCPyF`
+- Uploaded release: `1.2.1+26.3` (version ID `brnQol5N`)
+- Environment: client and server
+- Gallery: manager, editor, display settings, private sharing, and shared chat messages
+- Dependencies: Fabric API required, Mod Menu optional, original Command Waypoints incompatible
+- Upload verification: primary jar SHA-512 matches the local production release
+- Disclosures: AI-assisted code/text and derivative work, including original author and license
+
+Modrinth's current rules prohibit public projects primarily composed of AI output. The disclosure explicitly explains that most new enhancements and the project description were written with Codex and asks moderators to assess eligibility. Approval remains subject to their decision.
 
 Rules: https://modrinth.com/legal/rules

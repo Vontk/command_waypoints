@@ -4,6 +4,8 @@ Create fixed destinations on Minecraft's locator bar using commands or a native 
 
 An enhanced Fabric 26.3 fork of [Command Waypoints by Minenash](https://modrinth.com/mod/command-waypoints), maintained by [Vontk](https://github.com/Vontk). This is an independent project.
 
+[Modrinth submission](https://modrinth.com/mod/command-waypoints-plus) — awaiting moderation. [GitHub downloads](https://github.com/Vontk/command_waypoints/releases) are available now.
+
 ## Installation and opening the GUI
 
 Use **Minecraft 26.3**, Java 25, Fabric Loader **0.19.5+**, and Fabric API **0.161.0+26.3+**. Put the release jar in `mods` and restart Minecraft. **Replace the original Command Waypoints jar; the two editions cannot be installed together.** Existing waypoint data is retained.
