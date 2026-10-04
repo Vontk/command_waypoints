@@ -38,3 +38,7 @@ Rules: https://modrinth.com/legal/rules
 ## 1.2.2+26.3
 
 Readable command names preserve capitals and accept quoted spaces. Suggestions and manager tooltips use readable names without a mandatory namespace. Existing identifiers remain aliases. The project description is now concise and GUI-first, with the original locator-bar artwork and actual interface screenshots; the full documentation lives in `docs/GUIDE.md`.
+
+## 1.2.3+26.3
+
+Adds a yellow plus to the original icon through direct pixel editing. Simplifies the installation description and explicitly marks Mod Menu optional; the N/B shortcuts work independently. Java compatibility remains enforced by Fabric metadata, while player installation instructions focus on Minecraft, Fabric, and Fabric API.

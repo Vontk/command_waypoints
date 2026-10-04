@@ -1,12 +1,12 @@
 # Command Waypoints +
 
-Add fixed destinations to Minecraft’s **Locator Bar**, without needing an entity at the destination. This enhanced edition puts waypoint management in a familiar Minecraft GUI.
+Add fixed destinations to Minecraft’s **Locator Bar**. This enhanced edition puts waypoint management in a familiar Minecraft GUI.
 
 ![Minecraft locator bar — original Command Waypoints artwork](https://cdn.modrinth.com/data/cached_images/efac58e3820179642c8a548e0d264650c955b0de.png)
 
 ## Your destinations, one menu
 
-Open **Mods → Command Waypoints + → Config**, or press **N** in-game. Press **B** to add a waypoint at your current location. Both keys are configurable.
+Press **N** in-game to open the manager, or **B** to add a waypoint at your current location. Both keys are configurable. With optional **Mod Menu**, you can also open **Mods → Command Waypoints + → Config**.
 
 ![Waypoint manager](docs/images/manager.png)
 
@@ -21,9 +21,9 @@ Overworld ↔ Nether coordinates convert **8:1**. End destinations stay in the E
 
 ## Install
 
-**Minecraft 26.3 · Fabric · Java 25**
+**Minecraft 26.3 · Fabric**
 
-Requires **Fabric API**. **Mod Menu** provides the Config button. Install on client and server for multiplayer. Replace the original Command Waypoints jar.
+Put the mod and **Fabric API** in your instance’s `mods` folder. **Mod Menu is optional** — N and B work without it. Install on client and server for multiplayer. Replace the original Command Waypoints jar.
 
 [Downloads](https://modrinth.com/mod/command-waypoints-plus) · [Full guide](docs/GUIDE.md) · [GitHub releases](https://github.com/Vontk/command_waypoints/releases)
 
