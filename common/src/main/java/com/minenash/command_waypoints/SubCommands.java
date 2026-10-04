@@ -121,8 +121,16 @@ public class SubCommands {
 
     public static int listWaypoints(CommandContext<CommandSourceStack> ctx) {
         var points = points(ctx);
-        ctx.getSource().sendSuccess(() -> Component.literal(points.isEmpty() ? "No waypoints in this dimension set." :
-            points.values().stream().map(CommandWaypoint::toString).sorted().collect(java.util.stream.Collectors.joining("\n"))), false);
+        var message = Component.empty();
+        if (points.isEmpty()) message.append("No waypoints in this dimension set.");
+        else {
+            var sorted = points.values().stream().sorted(java.util.Comparator.comparing(point -> point.id.toString())).toList();
+            for (int i = 0; i < sorted.size(); i++) {
+                if (i > 0) message.append("\n");
+                message.append(sorted.get(i).listEntry());
+            }
+        }
+        ctx.getSource().sendSuccess(() -> message, false);
         return points.size();
     }
     public static int modifyWayPointColor(CommandContext<CommandSourceStack> ctx) {

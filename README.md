@@ -20,9 +20,9 @@ This mod extends the `/waypoint` command to allow adding/modifying/removing of "
 - `/waypoint <id> color hex <color>` changes its hexadecimal color.
 - `/waypoint <id> style reset` resets its icon style.
 - `/waypoint <id> style set <style>` changes its icon style.
-- `/waypoint <id> range <range>` changes its horizontal display range, measured in blocks in the viewer's current dimension.
+- `/waypoint <id> range <range>` sets the maximum horizontal distance at which it is shown, measured in blocks in the viewer's current dimension. For example, `range 1000` hides it beyond 1,000 blocks; `range 0` prevents display. The default is 60,000,000 blocks. The player's vanilla waypoint receive-range attribute can impose a lower limit.
 - `/waypoint remove <id>` removes a waypoint.
-- `/waypoint list` lists names, original coordinates/dimensions, and visibility for the current dimension set.
+- `/waypoint list` lists names in their waypoint colors, saved X/Z coordinates, and source dimensions for the current dimension set. Hidden entries are marked `(hidden)`.
 
 The custom commands no longer require `static` or `modify`. Custom waypoint commands work in singleplayer survival without enabling cheats. Dedicated servers retain the operator requirement because waypoints are shared server data. Vanilla entity waypoint commands retain their vanilla syntax and permission requirements. Names use Minecraft identifiers (an omitted namespace defaults to `minecraft:`); the locator bar retains vanilla icon rendering.
 

@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundTrackedWaypointPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -55,6 +56,20 @@ public class CommandWaypoint implements WaypointTransmitter {
     @Override
     public String toString() {
         return id + " [" + pos.getX() + " " + pos.getZ() + "] " + dimension + (visible ? " (visible)" : " (hidden)");
+    }
+
+    public Component listEntry() {
+        String name = id.getNamespace().equals("minecraft") ? id.getPath() : id.toString();
+        String dimensionName = switch (dimension) {
+            case "minecraft:overworld" -> "Overworld";
+            case "minecraft:the_nether" -> "Nether";
+            case "minecraft:the_end" -> "End";
+            default -> dimension;
+        };
+        var coloredName = Component.literal(name).withStyle(style -> style.withColor(icon.color.orElseGet(() -> net.minecraft.util.ARGB.setBrightness(net.minecraft.util.ARGB.color(255, uuid.hashCode()), 0.9f)) & 0xffffff));
+        return Component.empty().append(coloredName)
+            .append(Component.literal(" | X: " + pos.getX() + " Z: " + pos.getZ() + " | " + dimensionName
+                + (visible ? "" : " (hidden)")));
     }
 
     @Override

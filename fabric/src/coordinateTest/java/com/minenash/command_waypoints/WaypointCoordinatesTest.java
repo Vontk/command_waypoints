@@ -21,9 +21,10 @@ public final class WaypointCoordinatesTest {
             throw new AssertionError("cross-End conversion must fail");
         } catch (IllegalArgumentException expected) {}
         equal(25, WaypointCoordinates.distanceSquared(3, 4, 0, 0));
-        equal(Math.PI / 2, WaypointCoordinates.azimuth(1, 0, 0, 0));
-        equal(0, WaypointCoordinates.azimuth(0, -1, 0, 0));
-        equal(-Math.PI / 2, WaypointCoordinates.azimuth(-1, 0, 0, 0));
+        equal(-Math.PI / 2, WaypointCoordinates.azimuth(1, 0, 0, 0));
+        equal(Math.PI, WaypointCoordinates.azimuth(0, -1, 0, 0));
+        equal(0, WaypointCoordinates.azimuth(0, 1, 0, 0));
+        equal(Math.PI / 2, WaypointCoordinates.azimuth(-1, 0, 0, 0));
         System.out.println("Waypoint coordinate checks passed");
     }
 

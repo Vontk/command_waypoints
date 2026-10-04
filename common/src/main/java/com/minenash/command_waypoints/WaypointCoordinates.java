@@ -26,6 +26,6 @@ public final class WaypointCoordinates {
 
     public static float azimuth(double x, double z, double receiverX, double receiverZ) {
         // Vanilla's receiver-minus-source vector rotated clockwise by 90 degrees.
-        return (float) Math.atan2(x - receiverX, receiverZ - z);
+        return (float) Math.atan2(receiverX - x, z - receiverZ);
     }
 }
