@@ -41,8 +41,8 @@ publishing {
 sourceSets {
     coordinateChecks {
         java.srcDir 'src/coordinateTest/java'
-        compileClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.main.output
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
     }
 }
 
@@ -53,3 +53,11 @@ tasks.register('coordinateTest', JavaExec) {
     mainClass = 'com.minenash.command_waypoints.WaypointCoordinatesTest'
 }
 check.dependsOn coordinateTest
+
+// Minecraft serializes permissions using a CommandSourceStack with no server.
+tasks.register('permissionTest', JavaExec) {
+    dependsOn coordinateChecksClasses
+    classpath = sourceSets.coordinateChecks.runtimeClasspath
+    mainClass = 'com.minenash.command_waypoints.WaypointCommandPermissionsTest'
+}
+check.dependsOn permissionTest

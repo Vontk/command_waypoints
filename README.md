@@ -47,7 +47,7 @@ Example:
 
 ### Building for Minecraft 26.3 (Fabric)
 
-Requires Java 25. Run `./gradlew :fabric:build` (includes coordinate conversion checks); the installable jar is in
+Requires Java 25. Run `./gradlew :fabric:build` (includes coordinate conversion and login command-packet checks); the installable jar is in
 `fabric/build/libs/` (use the jar without the `-sources` suffix). Runtime
 requirements are Fabric Loader 0.19.5 or newer and Fabric API 0.161.0+26.3
 or newer for Minecraft 26.3. The Fabric build includes the existing common

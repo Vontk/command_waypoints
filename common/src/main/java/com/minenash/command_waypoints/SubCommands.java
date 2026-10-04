@@ -39,8 +39,11 @@ public class SubCommands {
         var vanillaPermission = original.getRequirement();
         // Singleplayer navigation must work without enabling cheats. Keep the
         // vanilla entity-editing branch and dedicated server access restricted.
+        // Minecraft probes restrictions with a serverless compilation source
+        // while serializing login commands. Mark this navigation root unrestricted
+        // for that probe; real dedicated-server sources still require permission.
         var root = literal(original.getLiteral())
-            .requires(source -> source.getServer().isSingleplayer() || vanillaPermission.test(source));
+            .requires(source -> source.getServer() == null || source.getServer().isSingleplayer() || vanillaPermission.test(source));
         for (var child : original.getArguments()) {
             var branch = child.createBuilder();
             child.getChildren().forEach(branch::then);
