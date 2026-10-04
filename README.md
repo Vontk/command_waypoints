@@ -27,3 +27,11 @@ This mod extends the `/waypoint` command to allow adding/modifying/removing of "
     - `/waypoint static modify <id> range <range>`
 - Remove waypoint
     - `/waypoint static remove <id>`
+
+### Building for Minecraft 26.3 (Fabric)
+
+Requires Java 25. Run `./gradlew :fabric:build`; the installable jar is in
+`fabric/build/libs/` (use the jar without the `-sources` suffix). Runtime
+requirements are Fabric Loader 0.19.5 or newer and Fabric API 0.161.0+26.3
+or newer for Minecraft 26.3. The Fabric build includes the existing common
+sources directly, using Fabric Loom for Minecraft's unobfuscated releases.

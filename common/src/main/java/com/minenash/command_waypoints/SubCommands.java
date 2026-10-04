@@ -3,13 +3,13 @@ package com.minenash.command_waypoints;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import net.minecraft.ChatFormatting;
+import net.minecraft.world.scores.TeamColor;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.waypoints.Waypoint;
 import net.minecraft.world.waypoints.WaypointStyleAssets;
 
@@ -23,12 +23,12 @@ import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static java.lang.Math.floor;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
-import static net.minecraft.commands.arguments.ColorArgument.color;
-import static net.minecraft.commands.arguments.ColorArgument.getColor;
+import static net.minecraft.commands.arguments.TeamColorArgument.teamColor;
+import static net.minecraft.commands.arguments.TeamColorArgument.getTeamColor;
 import static net.minecraft.commands.arguments.HexColorArgument.getHexColor;
 import static net.minecraft.commands.arguments.HexColorArgument.hexColor;
-import static net.minecraft.commands.arguments.ResourceLocationArgument.getId;
-import static net.minecraft.commands.arguments.ResourceLocationArgument.id;
+import static net.minecraft.commands.arguments.IdentifierArgument.getId;
+import static net.minecraft.commands.arguments.IdentifierArgument.id;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos;
 import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.getBlockPos;
 
@@ -50,7 +50,7 @@ public class SubCommands {
                                 .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
                                     .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)))))
                             ))
-                            .then(argument("color", color()).executes(SubCommands::addWaypoint)
+                            .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)
                                 .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)
                                     .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)))))
                                 .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
@@ -60,23 +60,23 @@ public class SubCommands {
                             .then(literal("color")
                                 .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)
                                     .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)))))
-                                .then(argument("color", color()).executes(SubCommands::addWaypoint)
+                                .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)
                                     .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)))))
                             .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
                                 .then(literal("color")
                                     .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)))
-                                    .then(argument("color", color()).executes(SubCommands::addWaypoint)))
+                                    .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)))
                             ))))
                         .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
                             .then(literal("color")
                                 .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)
                                     .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)))))
-                                .then(argument("color", color()).executes(SubCommands::addWaypoint)
+                                .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)
                                     .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)))))
                             .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)
                                 .then(literal("color")
                                     .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)))
-                                    .then(argument("color", color()).executes(SubCommands::addWaypoint)))
+                                    .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)))
                             ))
                         ))
                     )))
@@ -84,7 +84,7 @@ public class SubCommands {
                 .then(argument("id", id()).suggests(SUGGEST_STATIC_IDS)
                 .then(literal("color")
                     .then(literal("hex").then(argument("hex_color", hexColor()).executes(SubCommands::modifyWayPointHexColor)))
-                    .then(argument("color", color()).executes(SubCommands::modifyWayPointColor)))
+                    .then(argument("color", teamColor()).executes(SubCommands::modifyWayPointColor)))
                 .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::modifyWayPointRange)))
                 .then(literal("location").then(argument("location", blockPos()).executes(SubCommands::modifyWayPointPos)))
                 .then(literal("style")
@@ -98,14 +98,14 @@ public class SubCommands {
     public static int addWaypoint(CommandContext<CommandSourceStack> ctx) {
         var location = getBlockPos(ctx, "location");
 
-        var color = getArg(ctx, "color", ChatFormatting.class);
+        var color = getArg(ctx, "color", TeamColor.class);
         var hexColor = getArg(ctx, "hex_color", Integer.class);
-        var style = getArg(ctx, "style", ResourceLocation.class);
+        var style = getArg(ctx, "style", Identifier.class);
         var range = getArg(ctx, "range", Integer.class);
 
         return addWaypoint(ctx, location,
-            hexColor != null ? hexColor : color != null ? color.getColor() : null,
-            range != null ? range : Waypoint.MAX_RANGE,
+            hexColor != null ? hexColor : color != null ? color.rgb() : null,
+            range != null ? range : 60000000,
             style);
     }
 
@@ -119,14 +119,14 @@ public class SubCommands {
         var p = ctx.getSource().getPosition();
         var pos = new BlockPos((int)floor(p.x), (int)floor(p.y), (int)floor(p.z));
 
-        return addWaypoint(ctx, pos, null, Waypoint.MAX_RANGE, null);
+        return addWaypoint(ctx, pos, null, 60000000, null);
     }
 
     public static int addWaypointPos(CommandContext<CommandSourceStack> ctx) {
-        return addWaypoint(ctx, getBlockPos(ctx, "location"), null, Waypoint.MAX_RANGE, null);
+        return addWaypoint(ctx, getBlockPos(ctx, "location"), null, 60000000, null);
     }
 
-    public static int addWaypoint(CommandContext<CommandSourceStack> ctx, BlockPos pos, Integer color, int range, ResourceLocation style) {
+    public static int addWaypoint(CommandContext<CommandSourceStack> ctx, BlockPos pos, Integer color, int range, Identifier style) {
         var manager = ctx.getSource().getLevel().getWaypointManager();
         var id = getId(ctx, "id");
 
@@ -166,7 +166,7 @@ public class SubCommands {
         var point = point(ctx);
         if (point == null)
             return 0;
-        point.icon.color = Optional.ofNullable(getColor(ctx, "color").getColor());
+        point.icon.color = Optional.ofNullable(getTeamColor(ctx, "color").rgb());
         updateWaypoint(ctx, point);
         return 1;
     }
@@ -241,7 +241,7 @@ public class SubCommands {
         CommandWaypoints.saveWaypoints.accept(ctx.getSource().getLevel());
     }
 
-    public static Map<ResourceLocation,CommandWaypoint> points(CommandContext<CommandSourceStack> ctx) {
+    public static Map<Identifier,CommandWaypoint> points(CommandContext<CommandSourceStack> ctx) {
         return CommandWaypoints.waypoints.getOrDefault(ctx.getSource().getLevel(), new HashMap<>());
     }
 }

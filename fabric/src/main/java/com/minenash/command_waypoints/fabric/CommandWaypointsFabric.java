@@ -6,8 +6,8 @@ import com.mojang.serialization.Codec;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-import net.minecraft.resources.ResourceLocation;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
 import java.util.HashMap;
@@ -16,14 +16,14 @@ import java.util.Map;
 @SuppressWarnings("UnstableApiUsage")
 public final class CommandWaypointsFabric implements ModInitializer {
 
-    public static final AttachmentType<Map<ResourceLocation, CommandWaypoint>> WAYPOINT_ATTACHMENT_TYPE = AttachmentRegistry.createPersistent(
-        ResourceLocation.tryBuild("command_waypoints", "points"),
-        Codec.unboundedMap(ResourceLocation.CODEC, CommandWaypoint.CODEC));
+    public static final AttachmentType<Map<Identifier, CommandWaypoint>> WAYPOINT_ATTACHMENT_TYPE = AttachmentRegistry.createPersistent(
+        Identifier.tryBuild("command_waypoints", "points"),
+        Codec.unboundedMap(Identifier.CODEC, CommandWaypoint.CODEC));
 
     @Override
     public void onInitialize() {
 
-        ServerWorldEvents.LOAD.register(ResourceLocation.tryBuild("command_waypoints","read_attachments"), (server, level) -> {
+        ServerLevelEvents.LOAD.register(Identifier.tryBuild("command_waypoints","read_attachments"), (server, level) -> {
             var points = level.getAttachedOrCreate(WAYPOINT_ATTACHMENT_TYPE, HashMap::new);
             for (var point : points.values())
                 level.getWaypointManager().trackWaypoint(point);
