@@ -36,7 +36,18 @@ public class SubCommands {
         SharedSuggestionProvider.suggestResource(points(ctx).keySet(), builder);
 
     public static LiteralArgumentBuilder<CommandSourceStack> addSubCommands(LiteralArgumentBuilder<CommandSourceStack> original) {
-        var root = original
+        var vanillaPermission = original.getRequirement();
+        // Singleplayer navigation must work without enabling cheats. Keep the
+        // vanilla entity-editing branch and dedicated server access restricted.
+        var root = literal(original.getLiteral())
+            .requires(source -> source.getServer().isSingleplayer() || vanillaPermission.test(source));
+        for (var child : original.getArguments()) {
+            var branch = child.createBuilder();
+            child.getChildren().forEach(branch::then);
+            if (child.getName().equals("modify")) branch.requires(vanillaPermission);
+            root.then(branch);
+        }
+        root
             .then(literal("add").then(argument("id", id()).executes(SubCommands::addWaypointNoArgs)))
             .then(literal("remove").then(argument("id", id()).suggests(SUGGEST_IDS).executes(SubCommands::removeWaypoint)))
             .then(literal("list").executes(SubCommands::listWaypoints));

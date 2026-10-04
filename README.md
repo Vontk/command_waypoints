@@ -24,7 +24,7 @@ This mod extends the `/waypoint` command to allow adding/modifying/removing of "
 - `/waypoint remove <id>` removes a waypoint.
 - `/waypoint list` lists names, original coordinates/dimensions, and visibility for the current dimension set.
 
-The custom commands no longer require `static` or `modify`. Vanilla entity waypoint commands retain their vanilla syntax and permission requirements. Names use Minecraft identifiers (an omitted namespace defaults to `minecraft:`); the locator bar retains vanilla icon rendering.
+The custom commands no longer require `static` or `modify`. Custom waypoint commands work in singleplayer survival without enabling cheats. Dedicated servers retain the operator requirement because waypoints are shared server data. Vanilla entity waypoint commands retain their vanilla syntax and permission requirements. Names use Minecraft identifiers (an omitted namespace defaults to `minecraft:`); the locator bar retains vanilla icon rendering.
 
 ### Dimensions and visibility
 
