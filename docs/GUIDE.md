@@ -46,14 +46,18 @@ The editor exposes every custom waypoint property:
 | Name | Empty for a new point. Saving a blank name assigns `waypoint1`, `waypoint2`, etc., choosing the first unused name in the destination's dimension set. Names may contain spaces and up to 80 printable characters. |
 | Coordinates | Two whole-number fields, always **X then Z**, each between −30,000,000 and 30,000,000. Height is neither stored by the editor nor used for navigation. |
 | Dimension | Source dimension. Defaults to the player's current dimension. Click to cycle through available dimensions, including custom dimensions. Changing it keeps the entered numbers; it does not convert them. |
-| Color | Choose a palette swatch or enter six hexadecimal RGB digits, optionally prefixed with `#`. **Auto** clears the override and restores the UUID-derived default color. |
-| Display range | Maximum horizontal distance at which the point is visible, in blocks in the viewer's current dimension. Default: 60,000,000. `0` prevents display. The player's vanilla receive-range attribute can impose a lower limit. |
-| Icon style | A Minecraft waypoint-style identifier: `minecraft:default`, `minecraft:bowtie`, or one supplied by a resource pack. Editing this field retains support for the command's custom styles. |
+| Color | Colors the Locator Bar marker and the waypoint name in lists and shared chat. **Pick color…** opens a live preview, Red/Green/Blue sliders, palette swatches, and optional hex input. **Automatic** restores the default color; Cancel discards picker changes. |
+| Display range | Choose **Infinite** (default for new GUI points) or **Limited**, with a horizontal distance in blocks. Limited `0` prevents display. Infinite removes the waypoint’s own limit; Minecraft’s receive-range attribute still applies. Existing saved limits are preserved. |
+| Icon style | **Marker shape** opens actual icon previews for **Default (round)** and **Bowtie**. Choose a shape and press **Use shape**. Advanced users can enter a resource-pack waypoint-style identifier; previews use the active pack. |
 | Visible | Toggle the point without deleting it. |
 
 **Current location** fills in the player's current X/Z and dimension. **Reset** restores the values with which the editor opened. **Cancel/Escape** discards unsaved changes. **Save** validates the fields and waits for the server to accept the update; duplicate names, invalid numbers, and unavailable dimensions produce an error while leaving the editor open.
 
 Editing can rename or move a waypoint between dimensions, update its appearance, and change its visibility. The manager’s row tooltip shows the command name, including quotes when needed. Commands accept the readable name directly, including capitals. Quote names containing spaces, such as `"Home Base"`. The `minecraft:` prefix is unnecessary; existing identifiers remain compatible aliases.
+
+![Color picker with RGB sliders and name preview](images/color-picker.png)
+
+![Marker shape choices with actual Minecraft icon previews](images/icon-styles.png)
 
 ## Distance-dependent icons
 
@@ -108,7 +112,7 @@ The GUI complements commands; the custom syntax does not require `static` or `mo
 | `/waypoint <id> color hex <RRGGBB>` | Set a hexadecimal RGB color. |
 | `/waypoint <id> style reset` | Restore the default icon style. |
 | `/waypoint <id> style set <style>` | Set a waypoint-style identifier. |
-| `/waypoint <id> range <blocks>` | Set display range from 0 to 60,000,000 blocks. |
+| `/waypoint <id> range <blocks>` | Set display range from 0 to 2,147,483,647 blocks. The maximum integer selects Infinite. |
 | `/waypoint remove <id>` | Delete a waypoint from the current dimension set. |
 | `/waypoint list` | List the current dimension set, including each point's source dimension. |
 | `/waypoint list <dimension\|all>` | List exactly the selected saved source dimension, or all dimensions. Aliases: `overworld`, `nether`, `end`; full dimension identifiers are also accepted. A specific-dimension list omits the dimension from individual entries. |

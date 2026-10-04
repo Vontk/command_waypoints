@@ -10,7 +10,7 @@ Press **N** in-game to open the manager, or **B** to add a waypoint at your curr
 
 ![Waypoint manager](docs/images/manager.png)
 
-- **Create & edit** — name, X/Z, dimension, color, icon, range, and visibility.
+- **Create & edit** — name, X/Z, dimension, a visual color picker, marker-shape previews, Infinite or Limited range, and visibility.
 - **Find & organize** — search, filter by dimension, hide, or delete.
 - **Share & save** — send in public chat or choose an online player; click **[Add]** to keep a personal copy.
 - **Follow naturally** — icons grow as you approach; size and growth distance are configurable.

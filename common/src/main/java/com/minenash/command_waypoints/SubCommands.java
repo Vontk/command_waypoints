@@ -89,7 +89,7 @@ public class SubCommands {
             .then(literal("color")
                 .then(literal("hex").then(argument("hex_color", hexColor()).executes(SubCommands::modifyWayPointHexColor)))
                 .then(argument("color", teamColor()).executes(SubCommands::modifyWayPointColor)))
-            .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::modifyWayPointRange)))
+            .then(literal("range").then(argument("range", integer(0, Integer.MAX_VALUE)).executes(SubCommands::modifyWayPointRange)))
             .then(literal("style")
                 .then(literal("reset").executes(SubCommands::modifyWayPointResetStyle))
                 .then(literal("set").then(argument("style", id()).executes(SubCommands::modifyWayPointStyle)))));

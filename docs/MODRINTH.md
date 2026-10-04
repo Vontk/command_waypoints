@@ -42,3 +42,7 @@ Readable command names preserve capitals and accept quoted spaces. Suggestions a
 ## 1.2.3+26.3
 
 Adds a yellow plus to the original icon through direct pixel editing. Simplifies the installation description and explicitly marks Mod Menu optional; the N/B shortcuts work independently. Java compatibility remains enforced by Fabric metadata, while player installation instructions focus on Minecraft, Fabric, and Fabric API.
+
+## 1.2.4+26.3
+
+Improves the editor with explicit marker/name color labels, a dedicated RGB color picker with live preview, Infinite/Limited range selection, and a shape chooser with actual built-in icon previews and an advanced resource-pack style field. Adds refreshed editor, color-picker, and shape-picker screenshots. Infinite removes the waypoint distance limit while retaining Minecraft receive-range constraints.

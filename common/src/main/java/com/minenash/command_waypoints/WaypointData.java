@@ -39,7 +39,7 @@ public record WaypointData(String uuid, String id, String name, int x, int z, St
             throw new IllegalArgumentException("Name must contain at most 80 printable characters.");
         if (Math.abs((long)data.x) > 30000000 || Math.abs((long)data.z) > 30000000)
             throw new IllegalArgumentException("Coordinates must be between -30000000 and 30000000.");
-        if (data.range < 0 || data.range > 60000000) throw new IllegalArgumentException("Range must be 0–60000000 blocks.");
+        if (data.range < 0) throw new IllegalArgumentException("Range must be nonnegative; Infinite uses the maximum integer.");
         if (data.color != null && (data.color < 0 || data.color > 0xffffff)) throw new IllegalArgumentException("Use a six-digit RGB color.");
         if (data.dimension == null || Identifier.tryParse(data.dimension) == null || data.style == null || Identifier.tryParse(data.style) == null)
             throw new IllegalArgumentException("Dimension and icon style must be valid Minecraft identifiers.");

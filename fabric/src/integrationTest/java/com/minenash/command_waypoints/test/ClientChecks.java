@@ -23,6 +23,7 @@ public final class ClientChecks implements ClientModInitializer {
     private String savedUuid;
     private static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }
     @Override public void onInitializeClient() {
+        if (Boolean.getBoolean("waypoint.capture.editor")) { new EditorScreenshots().init(); return; }
         if (Boolean.getBoolean("waypoint.test.peer")) { new PeerChecks().init(); return; }
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ticks++;
@@ -149,7 +150,8 @@ public final class ClientChecks implements ClientModInitializer {
             }
             case 19 -> { box(client.gui.screen(),"X coordinate").setValue("invalid"); click(client.gui.screen(),"Save"); phase++; }
             case 20 -> { check(client.gui.screen() instanceof WaypointEditorScreen,"invalid input does not close editor"); box(client.gui.screen(),"X coordinate").setValue("-119");
-                box(client.gui.screen(),"Display range").setValue("1234"); box(client.gui.screen(),"Icon style").setValue("minecraft:bowtie");
+                if (button(client.gui.screen(),"Infinite").getMessage().getString().equals("Infinite")) click(client.gui.screen(),"Infinite");
+                box(client.gui.screen(),"Display range").setValue("1234"); click(client.gui.screen(),"Default (round)"); click(client.gui.screen(),"Bowtie"); click(client.gui.screen(),"Use shape");
                 box(client.gui.screen(),"Hex color").setValue("FF00FF"); click(client.gui.screen(),"Overworld"); click(client.gui.screen(),"End");
                 click(client.gui.screen(),"Save"); phase++; }
             case 21 -> { if (!(client.gui.screen() instanceof WaypointManagerScreen)) return; check(WaypointClient.points.stream().anyMatch(p -> p.uuid().equals(savedUuid) && p.x()==-119 && p.range()==1234 && p.style().equals("minecraft:bowtie") && p.dimension().equals("minecraft:the_nether") && p.color()==0xff00ff),"edit updates same waypoint"); click(client.gui.screen(),"Home base |"); click(client.gui.screen(),"Hide"); phase++; }

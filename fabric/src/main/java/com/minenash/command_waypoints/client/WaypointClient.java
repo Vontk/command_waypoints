@@ -59,6 +59,6 @@ public final class WaypointClient implements ClientModInitializer {
         return new WaypointData("", "", "", client.player == null ? 0 : (int)Math.floor(client.player.getX()),
             client.player == null ? 0 : (int)Math.floor(client.player.getZ()),
             client.level == null ? "minecraft:overworld" : client.level.dimension().identifier().toString(),
-            null, "minecraft:default", 60000000, true, true, true);
+            null, "minecraft:default", Integer.MAX_VALUE, true, true, true);
     }
 }
