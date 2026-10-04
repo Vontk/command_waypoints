@@ -30,10 +30,12 @@ import static net.minecraft.commands.arguments.HexColorArgument.getHexColor;
 import static net.minecraft.commands.arguments.HexColorArgument.hexColor;
 import static net.minecraft.commands.arguments.IdentifierArgument.getId;
 import static net.minecraft.commands.arguments.IdentifierArgument.id;
+import static com.mojang.brigadier.arguments.StringArgumentType.string;
+import static com.mojang.brigadier.arguments.StringArgumentType.getString;
 
 public class SubCommands {
     public static final SuggestionProvider<CommandSourceStack> SUGGEST_IDS = (ctx, builder) ->
-        SharedSuggestionProvider.suggestResource(points(ctx).keySet(), builder);
+        SharedSuggestionProvider.suggest(points(ctx).values().stream().map(p -> WaypointNames.commandName(p.displayName())), builder);
 
     public static LiteralArgumentBuilder<CommandSourceStack> addSubCommands(LiteralArgumentBuilder<CommandSourceStack> original) {
         var vanillaPermission = original.getRequirement();
@@ -47,8 +49,8 @@ public class SubCommands {
             root.then(branch);
         }
         root
-            .then(literal("add").then(argument("id", id()).executes(SubCommands::addWaypointNoArgs)))
-            .then(literal("remove").then(argument("id", id()).suggests(SUGGEST_IDS).executes(SubCommands::removeWaypoint)))
+            .then(literal("add").then(argument("id", string()).executes(SubCommands::addWaypointNoArgs)))
+            .then(literal("remove").then(argument("id", string()).suggests(SUGGEST_IDS).executes(SubCommands::removeWaypoint)))
              .then(literal("list").executes(ctx -> listWaypoints(ctx, null))
                 .then(argument("dimension", com.mojang.brigadier.arguments.StringArgumentType.word())
                     .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"overworld", "nether", "end", "all"}, builder))
@@ -61,11 +63,11 @@ public class SubCommands {
                         return 1;
                     } catch (IllegalArgumentException error) { ctx.getSource().sendFailure(Component.literal(error.getMessage())); return 0; }
                 })));
-        root.then(literal("share").then(argument("id", id()).suggests(SUGGEST_IDS)
+        root.then(literal("share").then(argument("id", string()).suggests(SUGGEST_IDS)
             .then(argument("recipient", com.mojang.brigadier.arguments.StringArgumentType.word())
                 .suggests((ctx, builder) -> { var names = new java.util.ArrayList<>(ctx.getSource().getOnlinePlayerNames()); names.add("all"); return SharedSuggestionProvider.suggest(names, builder); })
                 .executes(ctx -> {
-                    var point = points(ctx).get(getId(ctx, "id"));
+                    var point = find(ctx, points(ctx));
                     if (point == null) { ctx.getSource().sendFailure(Component.literal("Waypoint does not exist.")); return 0; }
                     try {
                         com.minenash.command_waypoints.fabric.WaypointNetworking.share(ctx.getSource().getPlayerOrException(), point, com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "recipient"));
@@ -73,7 +75,7 @@ public class SubCommands {
                     } catch (IllegalArgumentException error) { ctx.getSource().sendFailure(Component.literal(error.getMessage())); return 0; }
                 }))));
 
-        var destinations = argument("id", id());
+        var destinations = argument("id", string());
         for (String dimension : new String[] {"overworld", "nether", "end"}) {
             destinations.then(literal(dimension)
                 .then(argument("x", integer(-30000000, 30000000))
@@ -82,7 +84,7 @@ public class SubCommands {
         }
         root.then(literal("goto").then(destinations));
 
-        return root.then(argument("id", id()).suggests(SUGGEST_IDS)
+        return root.then(argument("id", string()).suggests(SUGGEST_IDS)
             .then(literal("visible").then(argument("visible", bool()).executes(SubCommands::setVisible)))
             .then(literal("color")
                 .then(literal("hex").then(argument("hex_color", hexColor()).executes(SubCommands::modifyWayPointHexColor)))
@@ -113,10 +115,17 @@ public class SubCommands {
     }
 
     private static int create(CommandContext<CommandSourceStack> ctx, ServerLevel owner, BlockPos pos, boolean moveExisting) {
-        var id = getId(ctx, "id");
-        var point = CommandWaypoints.points(owner, ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID()).get(id);
+        String name = getString(ctx, "id").trim();
+        if (name.isEmpty() || name.length() > 80 || name.chars().anyMatch(Character::isISOControl)) {
+            ctx.getSource().sendFailure(Component.literal("Name must contain 1–80 printable characters.")); return 0;
+        }
+        var available = CommandWaypoints.points(owner, ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID());
+        CommandWaypoint point;
+        try { point = WaypointNames.resolve(available.values(), name); }
+        catch (IllegalArgumentException error) { ctx.getSource().sendFailure(Component.literal(error.getMessage())); return 0; }
+        var id = point == null ? WaypointNames.identifier(available.keySet(), name) : point.id;
         if (point != null && !moveExisting) {
-            ctx.getSource().sendFailure(Component.translatable("commands.waypoint.static.add.already_exists", id.toString()));
+            ctx.getSource().sendFailure(Component.translatable("commands.waypoint.static.add.already_exists", name));
             return 0;
         }
         if (point == null) {
@@ -125,6 +134,7 @@ public class SubCommands {
                 ctx.getSource().sendFailure(Component.literal("You can save up to 512 personal waypoints.")); return 0;
             }
             point = new CommandWaypoint(UUID.randomUUID(), id, pos, new Waypoint.Icon(), 60000000, true);
+            point.name = name;
             point.owner = ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID();
         } else {
             if (!canEdit(ctx, point)) return 0;
@@ -134,7 +144,7 @@ public class SubCommands {
         point.dimension = owner.dimension().identifier().toString();
         CommandWaypoints.put(owner, point);
         save(ctx);
-        ctx.getSource().sendSuccess(() -> Component.translatable("commands.waypoint.static.add.success", id.toString()), false);
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.waypoint.static.add.success", name), false);
         return 1;
     }
 
@@ -213,11 +223,14 @@ public class SubCommands {
     }
 
     private static CommandWaypoint point(CommandContext<CommandSourceStack> ctx) {
-        var id = getId(ctx, "id");
-        var point = points(ctx).get(id);
+        var point = find(ctx, points(ctx));
         if (point == null)
-            ctx.getSource().sendFailure(Component.translatable("commands.waypoint.static.doesnt_exist", id.toString()));
+            ctx.getSource().sendFailure(Component.translatable("commands.waypoint.static.doesnt_exist", getString(ctx, "id")));
         return point != null && canEdit(ctx, point) ? point : null;
+    }
+    private static CommandWaypoint find(CommandContext<CommandSourceStack> ctx, Map<Identifier, CommandWaypoint> available) {
+        try { return WaypointNames.resolve(available.values(), getString(ctx, "id")); }
+        catch (IllegalArgumentException error) { ctx.getSource().sendFailure(Component.literal(error.getMessage())); return null; }
     }
     private static boolean canEdit(CommandContext<CommandSourceStack> ctx, CommandWaypoint point) {
         var player = ctx.getSource().getPlayer();

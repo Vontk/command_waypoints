@@ -72,7 +72,7 @@ public final class WaypointManagerScreen extends WaypointScreen {
                 String details = point.x() + " " + point.z() + (dimension.equals("all") ? " | " + WaypointData.dimensionName(point.dimension()) : "") + (point.visible() ? "" : " (hidden)");
                 var name = Component.literal((selected != null && selected.uuid().equals(point.uuid()) ? "> " : "") + point.name()).withStyle(s -> s.withColor(point.color() == null ? defaultColor(point) : point.color()));
                 row.setMessage(Component.empty().append(name).append(Component.literal(" | " + details)));
-                tooltip(row, point.name() + "\n" + details + "\nCommand ID: " + point.id() + (point.personal() ? "\nPersonal waypoint" : "\nLegacy shared waypoint"));
+                tooltip(row, point.name() + "\n" + details + "\nCommand name: " + com.minenash.command_waypoints.WaypointNames.commandName(point.name()) + (point.personal() ? "\nPersonal waypoint" : "\nLegacy shared waypoint"));
             }
         }
         boolean editable = selected != null && selected.editable();

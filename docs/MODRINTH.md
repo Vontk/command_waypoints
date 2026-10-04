@@ -34,3 +34,7 @@ Submitted for Modrinth moderation on October 4, 2026. Status at submission: **pr
 Modrinth's current rules prohibit public projects primarily composed of AI output. The disclosure explicitly explains that most new enhancements and the project description were written with Codex and asks moderators to assess eligibility. Approval remains subject to their decision.
 
 Rules: https://modrinth.com/legal/rules
+
+## 1.2.2+26.3
+
+Readable command names preserve capitals and accept quoted spaces. Suggestions and manager tooltips use readable names without a mandatory namespace. Existing identifiers remain aliases. The project description is now concise and GUI-first, with the original locator-bar artwork and actual interface screenshots; the full documentation lives in `docs/GUIDE.md`.
