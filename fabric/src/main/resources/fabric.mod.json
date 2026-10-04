@@ -2,24 +2,18 @@
   "schemaVersion": 1,
   "id": "command_waypoints",
   "version": "${version}",
-  "name": "Command Waypoints",
+  "name": "Command Waypoints +",
   "description": "Manage personal locator-bar waypoints through commands or a native GUI, with dimension filters and chat sharing.",
   "authors": [
-    "Jakob (Minenash)"
+    "Jakob (Minenash) \u2014 original mod",
+    "Vontk \u2014 enhanced fork"
   ],
   "contact": {
-    "homepage": "https://modrinth.com/project/command-waypoints",
-    "sources": "https://github.com/Minenash/command_waypoints",
-    "issues": "https://github.com/Minenash/command_waypoints/issues"
+    "homepage": "https://github.com/Vontk/command_waypoints",
+    "sources": "https://github.com/Vontk/command_waypoints",
+    "issues": "https://github.com/Vontk/command_waypoints/issues"
   },
-  "custom": {
-    "modmenu": {
-      "links": {
-        "modmenu.discord": "https://discord.gg/VZdzvrDpmx"
-      }
-    }
-  },
-  "license": "LGPL-3.0",
+  "license": "LGPL-3.0-or-later",
   "icon": "assets/command_waypoints/icon.png",
   "environment": "*",
   "entrypoints": {

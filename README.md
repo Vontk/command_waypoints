@@ -1,12 +1,14 @@
-# Command Waypoints — Minecraft 26.3 / Fabric
+# Command Waypoints +
 
-Create fixed destinations on Minecraft's locator bar using commands or a native waypoint manager. Height is ignored. The mod does not teleport players, reveal entities, add a minimap, or change gameplay.
+Create fixed destinations on Minecraft's locator bar using commands or a native waypoint manager. Navigate using horizontal coordinates, with personal waypoints, dimension filters, and chat sharing.
+
+An enhanced Fabric 26.3 fork of [Command Waypoints by Minenash](https://modrinth.com/mod/command-waypoints), maintained by [Vontk](https://github.com/Vontk). This is an independent project.
 
 ## Installation and opening the GUI
 
-Use **Minecraft 26.3**, Java 25, Fabric Loader **0.19.5+**, and Fabric API **0.161.0+26.3+**. Put the release jar in `mods` and restart Minecraft. Do not install the sources or integration-test jar.
+Use **Minecraft 26.3**, Java 25, Fabric Loader **0.19.5+**, and Fabric API **0.161.0+26.3+**. Put the release jar in `mods` and restart Minecraft. **Replace the original Command Waypoints jar; the two editions cannot be installed together.** Existing waypoint data is retained.
 
-Install [Mod Menu](https://modrinth.com/mod/modmenu) to open **Mods → Command Waypoints → Config/Settings**. The button opens the main waypoint manager. The manager's **Settings** button opens display preferences and key bindings. Mod Menu is optional; the key bindings work without it.
+Install [Mod Menu](https://modrinth.com/mod/modmenu) to open **Mods → Command Waypoints + → Config/Settings**. The button opens the main waypoint manager. The manager's **Settings** button opens display preferences and key bindings. Mod Menu is optional; the key bindings work without it.
 
 In a world:
 
@@ -15,7 +17,7 @@ In a world:
 | **N** | Open the waypoint manager. |
 | **B** | Open the add-waypoint editor, with your current X/Z and dimension filled in. |
 
-Both keys can be changed or unbound in **Options → Controls → Key Binds → Command Waypoints**, also accessible through **Waypoint settings → Key bindings**. If another mod uses either key, rebind it there. Quick add opens the full editor before saving; it does not silently create a point.
+Both keys can be changed or unbound in **Options → Controls → Key Binds → Command Waypoints +**, also accessible through **Waypoint settings → Key bindings**. If another mod uses either key, rebind it there. Quick add opens the full editor before saving; it does not silently create a point.
 
 On multiplayer, install this mod and Fabric API on the **server and client**. Personal waypoint commands and the GUI work for non-operators. When connected to a server without the mod, waypoint management is unavailable; display settings remain accessible from Mod Menu. The title-screen manager likewise allows Settings but requires joining a world to create or edit points.
 
@@ -49,7 +51,7 @@ The editor exposes every custom waypoint property:
 
 **Current location** fills in the player's current X/Z and dimension. **Reset** restores the values with which the editor opened. **Cancel/Escape** discards unsaved changes. **Save** validates the fields and waits for the server to accept the update; duplicate names, invalid numbers, and unavailable dimensions produce an error while leaving the editor open.
 
-Editing can rename or move a waypoint between dimensions, update its appearance, and change its visibility. Its UUID remains stable. Readable names have command identifiers shown in the manager's row tooltip: for example `Home base` typically uses `minecraft:home_base`. Identifier collisions receive numeric suffixes. Commands continue to use the identifier, not the display name with spaces.
+Editing can rename or move a waypoint between dimensions, update its appearance, and change its visibility. Readable names have command identifiers shown in the manager's row tooltip: for example `Home base` typically uses `minecraft:home_base`. Identifier collisions receive numeric suffixes. Commands continue to use the identifier, not the display name with spaces.
 
 ## Distance-dependent icons
 
@@ -63,9 +65,9 @@ A custom waypoint's icon stays at its minimum size when its destination is **200
 | 100 | 10 |
 | 0 | 14 |
 
-Change **Growth distance**, **Minimum size**, and **Maximum size** in **Settings**, then press **Save**. Growth distance must be positive; icon sizes must be 2–32 pixels with maximum at least minimum. Sizes follow the game's GUI scale and update smoothly, without discrete near/far texture changes. Preferences are local to the client and saved in `config/command_waypoints.json`. They apply to this mod's waypoints, leaving vanilla player/entity locator icons unchanged.
+Change **Growth distance**, **Minimum size**, and **Maximum size** in **Settings**, then press **Save**. Growth distance must be positive; icon sizes must be 2–32 pixels with maximum at least minimum. Sizes follow the game's GUI scale and update smoothly. Preferences are local to the client and saved in `config/command_waypoints.json`. They apply to this mod's waypoints, leaving vanilla player/entity locator icons unchanged.
 
-The following captures show the cyan test destination at a distant and a near position:
+A waypoint at distant and near positions:
 
 ![Small distant locator icon](docs/images/locator-far.png)
 ![Larger near locator icon](docs/images/locator-near.png)
@@ -89,7 +91,7 @@ Recipients see a formatted message containing the sharer's name, the waypoint's 
 
 Click **[Add]** to immediately save an independent **personal copy**, including coordinates, dimension, color, style, range, and visibility. A conflicting name gets a numeric suffix. Subsequent editing or deletion by the sender does not change the recipient's copy. Privately shared waypoints can be accepted only by the selected recipient; each recipient can accept a particular share once. The sender receives a private-send confirmation.
 
-Share buttons expire after 24 hours or a server restart; the server retains at most 1,024 active shares. There is a two-second interval between sends to avoid flooding chat. A client without this mod can read the formatted message, but a usable personal copy requires the compatible mod/server setup.
+Share buttons expire after 24 hours or a server restart. There is a two-second interval between sends to avoid flooding chat. A client without this mod can read the formatted message, but a usable personal copy requires the compatible mod/server setup.
 
 ## Commands
 
@@ -135,28 +137,24 @@ Overworld and Nether destinations share a set of names for each player and are v
 
 The End has an independent set of names and destinations. End points are visible only in the End; Overworld/Nether points are never shown there. A player can have independent same-name points in the End and the portal dimension set. Other dimensions are isolated in the same way. GUI/list filtering considers saved source dimensions even though portal destinations can be displayed in both dimensions.
 
-New points are **personal**, saved with the owner's UUID in the world's existing waypoint attachments. Other players do not receive their locator markers or see them in their waypoint lists until a copy is explicitly shared and accepted. Each player can create up to 512 personal points through commands or the GUI.
+New points are **personal**, saved in the world for their owner. Other players do not receive their locator markers or see them in their waypoint lists until a copy is explicitly shared and accepted. Each player can create up to 512 personal points through commands or the GUI.
 
-Existing points from earlier versions remain **legacy shared waypoints** with their original owning dimension and properties. Their old attachment records still load; missing visibility defaults to visible. They remain visible/listed to applicable players. Editing these existing shared points requires singleplayer access or server operator permission, and affects everyone receiving the original. Non-operators may share readable legacy points and accept personal copies. No automatic edits to player saves, graphics settings, resource packs, worlds, or unrelated configs are needed.
+Existing points from earlier versions remain **legacy shared waypoints** with their original owning dimension and properties. They remain visible/listed to applicable players. Editing these existing shared points requires singleplayer access or server operator permission, and affects everyone receiving the original. Non-operators may share readable legacy points and accept personal copies.
 
-## Design references
+## Source and contributing
 
-The manager/search/dimension-filter/editor/share flow follows familiar conventions documented by [JourneyMap](https://teamjm.github.io/journeymap-docs/latest/client/waypoints/). Integration uses the standard [Mod Menu config screen factory](https://github.com/TerraformersMC/ModMenu). The implementation uses native Minecraft widgets and explicit Save/Cancel actions, with [Fabric's screen](https://docs.fabricmc.net/develop/rendering/gui/custom-screens), [key mapping](https://docs.fabricmc.net/develop/key-mappings), and [networking](https://docs.fabricmc.net/develop/networking) APIs. These are design references; JourneyMap is not required or bundled.
-
-## Build and tests
-
-Requires Java 25:
+Build with Java 25:
 
 ```sh
 ./gradlew :fabric:build
 ```
 
-The installable artifact is `fabric/build/libs/command_waypoints-fabric-1.2.0+26.3.jar`. The normal build checks portal scaling, End boundaries, directional bearings against Minecraft's vector math, colored list formatting, and the real serverless login-command packet encoder/decoder.
+The installable jar is in `fabric/build/libs/`. See [testing instructions](docs/TESTING.md) for the separate integration harness. Report bugs and contribute changes at [Vontk/command_waypoints](https://github.com/Vontk/command_waypoints).
 
-An opt-in test mod drives native screens and actual client/server payloads against a disposable local server:
+## Credits and license
 
-```sh
-./gradlew :fabric:integrationTestJar
-```
+Based on [Command Waypoints](https://github.com/Minenash/command_waypoints) by **Jakob (Minenash)**. The Fabric 26.3 port, waypoint manager, personal sharing, dimension filtering, and configurable distance scaling are maintained in this fork by **Vontk**.
 
-It is built separately and is **not packaged in the production mod**. See [integration test instructions](docs/TESTING.md) for creation, editing, validation, private/public sharing, clickable import, permissions, visibility, deletion, quick add, persistence, and screenshot checks. README images are captures of the actual Minecraft 26.3 screens in the disposable test environment.
+Distributed under **LGPL-3.0-or-later**; see [LICENSE.txt](LICENSE.txt). Original author attribution and license are preserved.
+
+This fork’s enhancements and documentation were developed with assistance from OpenAI Codex. Interface screenshots are captures from Minecraft.
