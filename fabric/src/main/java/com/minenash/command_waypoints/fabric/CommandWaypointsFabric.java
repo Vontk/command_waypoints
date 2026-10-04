@@ -30,7 +30,8 @@ public final class CommandWaypointsFabric implements ModInitializer {
         });
 
         CommandWaypoints.init(CommandWaypointsFabric::save);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> CommandWaypoints.clear());
+        WaypointNetworking.init();
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> { CommandWaypoints.clear(); WaypointNetworking.clear(); });
     }
 
     public static void save(Level level) {

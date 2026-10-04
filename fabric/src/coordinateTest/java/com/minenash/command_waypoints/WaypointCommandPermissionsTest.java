@@ -51,8 +51,9 @@ public final class WaypointCommandPermissionsTest {
         waypoint.dimension = "minecraft:the_nether";
         waypoint.icon.color = java.util.Optional.of(0xff12ab34);
         var entry = waypoint.listEntry();
-        check(entry.getString().equals("home | X: -101 Z: 203 | Nether"), "list includes name, X/Z, and source dimension");
+        check(entry.getString().equals("home | -101 203 | Nether"), "list includes name, X/Z, and source dimension");
         check(entry.getSiblings().getFirst().getStyle().getColor().getValue() == 0x12ab34, "list name uses waypoint RGB color");
+        check(waypoint.listEntry(false).getString().equals("home | -101 203"), "specific dimension omits the dimension suffix");
         waypoint.icon.color = java.util.Optional.empty();
         int vanillaDefault = net.minecraft.util.ARGB.setBrightness(net.minecraft.util.ARGB.color(255, waypoint.uuid.hashCode()), 0.9f) & 0xffffff;
         check(waypoint.listEntry().getSiblings().getFirst().getStyle().getColor().getValue() == vanillaDefault,

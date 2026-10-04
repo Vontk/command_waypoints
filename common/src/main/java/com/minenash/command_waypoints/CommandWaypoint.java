@@ -23,11 +23,15 @@ public class CommandWaypoint implements WaypointTransmitter {
         BlockPos.CODEC.fieldOf("pos").forGetter(CommandWaypoint::pos),
         Icon.CODEC.fieldOf("icon").forGetter(CommandWaypoint::icon),
         Codec.INT.fieldOf("range").forGetter(CommandWaypoint::range),
-        Codec.BOOL.optionalFieldOf("visible", true).forGetter(CommandWaypoint::visible)
+        Codec.BOOL.optionalFieldOf("visible", true).forGetter(CommandWaypoint::visible),
+        UUIDUtil.CODEC.optionalFieldOf("owner").forGetter(p -> Optional.ofNullable(p.owner)),
+        Codec.STRING.optionalFieldOf("name", "").forGetter(p -> p.name)
     ).apply(instance, CommandWaypoint::new));
 
     public final UUID uuid;
     public final Identifier id;
+    public UUID owner;
+    public String name = "";
     public BlockPos pos;
     public Waypoint.Icon icon;
     public int range;
@@ -53,22 +57,33 @@ public class CommandWaypoint implements WaypointTransmitter {
         this.visible = visible;
     }
 
+    public CommandWaypoint(UUID uuid, Identifier id, BlockPos pos, Waypoint.Icon icon, int range,
+                           boolean visible, Optional<UUID> owner, String name) {
+        this(uuid, id, pos, icon, range, visible);
+        this.owner = owner.orElse(null);
+        this.name = name;
+    }
+
+    public String displayName() {
+        return name.isBlank() ? (id.getNamespace().equals("minecraft") ? id.getPath() : id.toString()) : name;
+    }
+
+    public int color() {
+        return icon.color.orElseGet(() -> net.minecraft.util.ARGB.setBrightness(
+            net.minecraft.util.ARGB.color(255, uuid.hashCode()), 0.9f)) & 0xffffff;
+    }
+
+    public Component listEntry() { return listEntry(true); }
+
     @Override
     public String toString() {
         return id + " [" + pos.getX() + " " + pos.getZ() + "] " + dimension + (visible ? " (visible)" : " (hidden)");
     }
 
-    public Component listEntry() {
-        String name = id.getNamespace().equals("minecraft") ? id.getPath() : id.toString();
-        String dimensionName = switch (dimension) {
-            case "minecraft:overworld" -> "Overworld";
-            case "minecraft:the_nether" -> "Nether";
-            case "minecraft:the_end" -> "End";
-            default -> dimension;
-        };
-        var coloredName = Component.literal(name).withStyle(style -> style.withColor(icon.color.orElseGet(() -> net.minecraft.util.ARGB.setBrightness(net.minecraft.util.ARGB.color(255, uuid.hashCode()), 0.9f)) & 0xffffff));
-        return Component.empty().append(coloredName)
-            .append(Component.literal(" | X: " + pos.getX() + " Z: " + pos.getZ() + " | " + dimensionName
+    public Component listEntry(boolean showDimension) {
+        return Component.empty().append(Component.literal(displayName()).withStyle(style -> style.withColor(color())))
+            .append(Component.literal(" | " + pos.getX() + " " + pos.getZ()
+                + (showDimension ? " | " + WaypointData.dimensionName(dimension) : "")
                 + (visible ? "" : " (hidden)")));
     }
 
@@ -93,7 +108,7 @@ public class CommandWaypoint implements WaypointTransmitter {
 
     public boolean canReceive(ServerPlayer receiver) {
         String destination = receiver.level().dimension().identifier().toString();
-        if (!visible || dimension == null || !WaypointCoordinates.shares(dimension, destination)) return false;
+        if ((owner != null && !owner.equals(receiver.getUUID())) || !visible || dimension == null || !WaypointCoordinates.shares(dimension, destination)) return false;
         double scale = scale(receiver);
         double distance = WaypointCoordinates.distanceSquared(pos.getX() * scale, pos.getZ() * scale,
             receiver.getX(), receiver.getZ());

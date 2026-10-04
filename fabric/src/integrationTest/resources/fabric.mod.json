@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"waypoint_integration_checks","version":"1","name":"Waypoint integration checks (test only)","environment":"*","entrypoints":{"main":["com.minenash.command_waypoints.test.ServerChecks"],"client":["com.minenash.command_waypoints.test.ClientChecks"]},"mixins":["waypoint-test.mixins.json"],"depends":{"command_waypoints":"*"}}

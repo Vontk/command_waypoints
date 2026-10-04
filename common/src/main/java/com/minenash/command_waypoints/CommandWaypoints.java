@@ -14,6 +14,7 @@ public final class CommandWaypoints {
     public static final Map<Level, Map<Identifier, CommandWaypoint>> waypoints = new HashMap<>();
     private static final Map<ServerLevel, Set<CommandWaypoint>> tracked = new HashMap<>();
     public static Consumer<Level> saveWaypoints;
+    public static Runnable onChange = () -> {};
 
     public static void init(Consumer<Level> save) { saveWaypoints = save; }
 
@@ -23,15 +24,31 @@ public final class CommandWaypoints {
         refresh();
     }
 
-    public static Map<Identifier, CommandWaypoint> points(ServerLevel level) {
+    public static java.util.List<CommandWaypoint> all(UUIDFilter filter) {
+        return waypoints.values().stream().flatMap(points -> points.values().stream())
+            .filter(point -> filter.accept(point)).toList();
+    }
+
+    @FunctionalInterface public interface UUIDFilter { boolean accept(CommandWaypoint point); }
+
+    public static Map<Identifier, CommandWaypoint> points(ServerLevel level) { return points(level, null); }
+
+    public static Map<Identifier, CommandWaypoint> points(ServerLevel level, java.util.UUID player) {
         Map<Identifier, CommandWaypoint> result = new HashMap<>();
-        waypoints.forEach((owner, points) -> {
-            if (WaypointCoordinates.shares(owner.dimension().identifier().toString(), level.dimension().identifier().toString()))
-                result.putAll(points);
-        });
-        // Preserve access to legacy same-name waypoints in their owning dimension.
-        result.putAll(waypoints.getOrDefault(level, Map.of()));
+        var accessible = all(p -> (p.owner == null || p.owner.equals(player))
+            && WaypointCoordinates.shares(p.dimension, level.dimension().identifier().toString()));
+        accessible.stream().filter(p -> p.owner == null).forEach(p -> result.put(p.id, p));
+        accessible.stream().filter(p -> p.owner == null && p.dimension.equals(level.dimension().identifier().toString()))
+            .forEach(p -> result.put(p.id, p));
+        accessible.stream().filter(p -> p.owner != null).forEach(p -> result.put(p.id, p));
         return result;
+    }
+
+    public static void put(ServerLevel level, CommandWaypoint point) {
+        point.dimension = level.dimension().identifier().toString();
+        Identifier storageId = point.owner == null ? point.id
+            : Identifier.fromNamespaceAndPath("command_waypoints", point.uuid.toString());
+        waypoints.computeIfAbsent(level, ignored -> new HashMap<>()).put(storageId, point);
     }
 
     public static void refresh() {
@@ -53,6 +70,7 @@ public final class CommandWaypoints {
     public static void save() {
         refresh();
         waypoints.keySet().forEach(saveWaypoints);
+        onChange.run();
     }
 
     public static void remove(CommandWaypoint point) {

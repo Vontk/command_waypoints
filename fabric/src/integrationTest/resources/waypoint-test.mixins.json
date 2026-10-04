@@ -1,0 +1,1 @@
+{"required":true,"package":"com.minenash.command_waypoints.test.mixin","compatibilityLevel":"JAVA_25","client":["ChatCaptureMixin"],"injectors":{"defaultRequire":1}}

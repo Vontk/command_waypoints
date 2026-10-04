@@ -1,54 +1,162 @@
-<div align="center">
-<img src="https://cdn.modrinth.com/data/cached_images/efac58e3820179642c8a548e0d264650c955b0de.png">
-<br><br><br>
+# Command Waypoints — Minecraft 26.3 / Fabric
 
-In 25w15a, Mojang released the Locator Bar, which can show waypoints. Currently, only entities can be waypoints with players showing by default.
+Create fixed destinations on Minecraft's locator bar using commands or a native waypoint manager. Height is ignored. The mod does not teleport players, reveal entities, add a minimap, or change gameplay.
 
-This mod extends the `/waypoint` command to allow adding/modifying/removing of "static" waypoints.
+## Installation and opening the GUI
 
-<br>
-<img src="https://cdn.modrinth.com/data/cached_images/efac58e3820179642c8a548e0d264650c955b0de.png">
-</div>
-<br><br>
+Use **Minecraft 26.3**, Java 25, Fabric Loader **0.19.5+**, and Fabric API **0.161.0+26.3+**. Put the release jar in `mods` and restart Minecraft. Do not install the sources or integration-test jar.
 
-### Commands
+Install [Mod Menu](https://modrinth.com/mod/modmenu) to open **Mods → Command Waypoints → Config/Settings**. The button opens the main waypoint manager. The manager's **Settings** button opens display preferences and key bindings. Mod Menu is optional; the key bindings work without it.
 
-- `/waypoint add <id>` creates a visible waypoint named `<id>` at your current X/Z position, in your current dimension.
-- `/waypoint goto <id> <dimension> <x> <z>` creates or moves a named destination. The dimension is required: `overworld`, `nether`, or `end`. Coordinates are whole numbers in the specified dimension. This sets a destination; it does not teleport you. Moving an existing waypoint preserves its appearance and visibility.
-- `/waypoint <id> visible <true|false>` shows or hides the waypoint without deleting it.
-- `/waypoint <id> color <color>` changes its named color.
-- `/waypoint <id> color hex <color>` changes its hexadecimal color.
-- `/waypoint <id> style reset` resets its icon style.
-- `/waypoint <id> style set <style>` changes its icon style.
-- `/waypoint <id> range <range>` sets the maximum horizontal distance at which it is shown, measured in blocks in the viewer's current dimension. For example, `range 1000` hides it beyond 1,000 blocks; `range 0` prevents display. The default is 60,000,000 blocks. The player's vanilla waypoint receive-range attribute can impose a lower limit.
-- `/waypoint remove <id>` removes a waypoint.
-- `/waypoint list` lists names in their waypoint colors, saved X/Z coordinates, and source dimensions for the current dimension set. Hidden entries are marked `(hidden)`.
+In a world:
 
-The custom commands no longer require `static` or `modify`. Custom waypoint commands work in singleplayer survival without enabling cheats. Dedicated servers retain the operator requirement because waypoints are shared server data. Vanilla entity waypoint commands retain their vanilla syntax and permission requirements. Names use Minecraft identifiers (an omitted namespace defaults to `minecraft:`); the locator bar retains vanilla icon rendering.
+| Default key | Action |
+| --- | --- |
+| **N** | Open the waypoint manager. |
+| **B** | Open the add-waypoint editor, with your current X/Z and dimension filled in. |
 
-### Dimensions and visibility
+Both keys can be changed or unbound in **Options → Controls → Key Binds → Command Waypoints**, also accessible through **Waypoint settings → Key bindings**. If another mod uses either key, rebind it there. Quick add opens the full editor before saving; it does not silently create a point.
 
-Overworld and Nether waypoints share one set of names. A Nether destination at `10 -20` appears in the Overworld at `80 -160`. An Overworld destination at `80 -160` appears in the Nether at `10 -20`. Conversion retains fractional coordinates internally, including negative values.
+On multiplayer, install this mod and Fabric API on the **server and client**. Personal waypoint commands and the GUI work for non-operators. When connected to a server without the mod, waypoint management is unavailable; display settings remain accessible from Mod Menu. The title-screen manager likewise allows Settings but requires joining a world to create or edit points.
 
-The End has a separate set, visible only in the End. End waypoints never appear in the Overworld or Nether, and Overworld/Nether waypoints never appear in the End. The same name can exist independently in the End and in the Overworld/Nether set. Other dimensions remain isolated.
+## Waypoint manager
 
-Height is ignored for direction and range. Waypoints use the vanilla locator bar's horizontal direction packets, so they do not display elevation arrows. Visibility and appearance changes are shared by everyone receiving that waypoint, following the original server-side mod's behavior. Hidden waypoints remain saved and listed. Previously saved waypoints load as visible and retain their original owning dimension.
+![Waypoint manager with colored names and dimensions](docs/images/manager.png)
 
-Example:
+- **Search** filters names and command identifiers as you type.
+- The **dimension selector** cycles through **All dimensions** and the dimensions available in the world. Filtering uses the waypoint's saved source dimension, not the dimension in which its converted destination is visible.
+- Each row displays its colored name, then **X Z**, with the dimension appended only when viewing all dimensions. Hidden points are marked `(hidden)`. Hover over a row to see its complete name, source dimension, command ID, and personal/shared status.
+- Select a row to enable **Edit**, **Show/Hide**, **Share**, and **Delete**.
+- **New** opens the same editor as quick add. **Delete** asks for confirmation. **Show/Hide** preserves the saved point and all its properties.
+- The list is sorted by name. Page buttons and the mouse wheel navigate long lists.
+- **Settings** opens locator-icon size preferences and the native key-binding screen. **Done/Escape** returns to the previous screen or game.
+
+## Creating and editing
+
+![Waypoint editor with location, color palette and display options](docs/images/editor.png)
+
+The editor exposes every custom waypoint property:
+
+| Property | Behavior |
+| --- | --- |
+| Name | Empty for a new point. Saving a blank name assigns `waypoint1`, `waypoint2`, etc., choosing the first unused name in the destination's dimension set. Names may contain spaces and up to 80 printable characters. |
+| Coordinates | Two whole-number fields, always **X then Z**, each between −30,000,000 and 30,000,000. Height is neither stored by the editor nor used for navigation. |
+| Dimension | Source dimension. Defaults to the player's current dimension. Click to cycle through available dimensions, including custom dimensions. Changing it keeps the entered numbers; it does not convert them. |
+| Color | Choose a palette swatch or enter six hexadecimal RGB digits, optionally prefixed with `#`. **Auto** clears the override and restores the UUID-derived default color. |
+| Display range | Maximum horizontal distance at which the point is visible, in blocks in the viewer's current dimension. Default: 60,000,000. `0` prevents display. The player's vanilla receive-range attribute can impose a lower limit. |
+| Icon style | A Minecraft waypoint-style identifier: `minecraft:default`, `minecraft:bowtie`, or one supplied by a resource pack. Editing this field retains support for the command's custom styles. |
+| Visible | Toggle the point without deleting it. |
+
+**Current location** fills in the player's current X/Z and dimension. **Reset** restores the values with which the editor opened. **Cancel/Escape** discards unsaved changes. **Save** validates the fields and waits for the server to accept the update; duplicate names, invalid numbers, and unavailable dimensions produce an error while leaving the editor open.
+
+Editing can rename or move a waypoint between dimensions, update its appearance, and change its visibility. Its UUID remains stable. Readable names have command identifiers shown in the manager's row tooltip: for example `Home base` typically uses `minecraft:home_base`. Identifier collisions receive numeric suffixes. Commands continue to use the identifier, not the display name with spaces.
+
+## Distance-dependent icons
+
+![Display settings and key binding entry point](docs/images/settings.png)
+
+A custom waypoint's icon stays at its minimum size when its destination is **200 blocks away or farther**, then grows **linearly** as you approach, reaching maximum size at zero distance. Defaults:
+
+| Horizontal distance | Icon size (GUI pixels) |
+| --- | --- |
+| 200 or more | 6 |
+| 100 | 10 |
+| 0 | 14 |
+
+Change **Growth distance**, **Minimum size**, and **Maximum size** in **Settings**, then press **Save**. Growth distance must be positive; icon sizes must be 2–32 pixels with maximum at least minimum. Sizes follow the game's GUI scale and update smoothly, without discrete near/far texture changes. Preferences are local to the client and saved in `config/command_waypoints.json`. They apply to this mod's waypoints, leaving vanilla player/entity locator icons unchanged.
+
+The following captures show the cyan test destination at a distant and a near position:
+
+![Small distant locator icon](docs/images/locator-far.png)
+![Larger near locator icon](docs/images/locator-near.png)
+
+Distance uses X/Z in the viewer's dimension after portal conversion. Up/down white arrows are suppressed for this mod's destinations, including when looking sharply up or down. Icon appearance still uses the selected vanilla/resource-pack waypoint style.
+
+## Sharing
+
+![Public share screen](docs/images/share-public.png)
+
+Select a waypoint and press **Share**:
+
+- **Public chat** sends it to everyone currently online.
+- **Specific player** opens a searchable list of currently online players. Type part of a player name, select the recipient, and press **Send privately**. Search is case-insensitive; a disconnected recipient cannot be selected for sending.
+
+![Private share screen with searchable online players](docs/images/share-private.png)
+
+Recipients see a formatted message containing the sharer's name, the waypoint's colored name, **X Z**, the source dimension, and a bold green **[Add]** button:
+
+![Actual shared waypoint messages and clickable Add buttons](docs/images/sharing-chat.png)
+
+Click **[Add]** to immediately save an independent **personal copy**, including coordinates, dimension, color, style, range, and visibility. A conflicting name gets a numeric suffix. Subsequent editing or deletion by the sender does not change the recipient's copy. Privately shared waypoints can be accepted only by the selected recipient; each recipient can accept a particular share once. The sender receives a private-send confirmation.
+
+Share buttons expire after 24 hours or a server restart; the server retains at most 1,024 active shares. There is a two-second interval between sends to avoid flooding chat. A client without this mod can read the formatted message, but a usable personal copy requires the compatible mod/server setup.
+
+## Commands
+
+The GUI complements commands; the custom syntax does not require `static` or `modify`.
+
+| Command | Action |
+| --- | --- |
+| `/waypoint add <id>` | Create a visible personal waypoint at your current X/Z and dimension, named `<id>`. |
+| `/waypoint goto <id> <dimension> <x> <z>` | Create or move a named destination. Dimension is required: `overworld`, `nether`, or `end`. Existing appearance, range, and visibility are retained. **This does not teleport.** |
+| `/waypoint <id> visible <true\|false>` | Show or hide the waypoint. |
+| `/waypoint <id> color <color>` | Set a named Minecraft color, e.g. `green`. |
+| `/waypoint <id> color hex <RRGGBB>` | Set a hexadecimal RGB color. |
+| `/waypoint <id> style reset` | Restore the default icon style. |
+| `/waypoint <id> style set <style>` | Set a waypoint-style identifier. |
+| `/waypoint <id> range <blocks>` | Set display range from 0 to 60,000,000 blocks. |
+| `/waypoint remove <id>` | Delete a waypoint from the current dimension set. |
+| `/waypoint list` | List the current dimension set, including each point's source dimension. |
+| `/waypoint list <dimension\|all>` | List exactly the selected saved source dimension, or all dimensions. Aliases: `overworld`, `nether`, `end`; full dimension identifiers are also accepted. A specific-dimension list omits the dimension from individual entries. |
+| `/waypoint share <id> <player\|all>` | Send a waypoint privately to an online player or publicly to everyone online. |
+| `/waypoint accept <token>` | Accept the share represented by a server-issued token; the chat **[Add]** button runs this command automatically. |
+
+Names in command output use the waypoint color. Coordinate pairs are always formatted as `X Z`, e.g. `home | -101 203 | Nether`; the numeric values have no `x:`/`z:` prefixes.
 
 ```text
 /waypoint add home
 /waypoint home color green
 /waypoint home visible false
 /waypoint home visible true
+/waypoint home range 1000
 /waypoint goto fortress nether -100 250
 /waypoint goto end_city end 1200 -800
+/waypoint list nether
+/waypoint list all
+/waypoint share home Alex
+/waypoint share fortress all
 ```
 
-### Building for Minecraft 26.3 (Fabric)
+Minecraft identifiers are used for `<id>` and `<style>`; omitted namespaces default to `minecraft:`. Vanilla entity waypoint commands keep their original syntax and permission requirements.
 
-Requires Java 25. Run `./gradlew :fabric:build` (includes coordinate conversion and login command-packet checks); the installable jar is in
-`fabric/build/libs/` (use the jar without the `-sources` suffix). Runtime
-requirements are Fabric Loader 0.19.5 or newer and Fabric API 0.161.0+26.3
-or newer for Minecraft 26.3. The Fabric build includes the existing common
-sources directly, using Fabric Loom for Minecraft's unobfuscated releases.
+## Dimensions, personal data, and existing worlds
+
+Overworld and Nether destinations share a set of names for each player and are visible in both dimensions. Nether coordinates are multiplied by **8** in the Overworld, and Overworld coordinates are divided by **8** in the Nether. A Nether destination at `10 -20` therefore appears in the Overworld at `80 -160`. Conversion keeps negative and fractional coordinates internally.
+
+The End has an independent set of names and destinations. End points are visible only in the End; Overworld/Nether points are never shown there. A player can have independent same-name points in the End and the portal dimension set. Other dimensions are isolated in the same way. GUI/list filtering considers saved source dimensions even though portal destinations can be displayed in both dimensions.
+
+New points are **personal**, saved with the owner's UUID in the world's existing waypoint attachments. Other players do not receive their locator markers or see them in their waypoint lists until a copy is explicitly shared and accepted. Each player can create up to 512 personal points through commands or the GUI.
+
+Existing points from earlier versions remain **legacy shared waypoints** with their original owning dimension and properties. Their old attachment records still load; missing visibility defaults to visible. They remain visible/listed to applicable players. Editing these existing shared points requires singleplayer access or server operator permission, and affects everyone receiving the original. Non-operators may share readable legacy points and accept personal copies. No automatic edits to player saves, graphics settings, resource packs, worlds, or unrelated configs are needed.
+
+## Design references
+
+The manager/search/dimension-filter/editor/share flow follows familiar conventions documented by [JourneyMap](https://teamjm.github.io/journeymap-docs/latest/client/waypoints/). Integration uses the standard [Mod Menu config screen factory](https://github.com/TerraformersMC/ModMenu). The implementation uses native Minecraft widgets and explicit Save/Cancel actions, with [Fabric's screen](https://docs.fabricmc.net/develop/rendering/gui/custom-screens), [key mapping](https://docs.fabricmc.net/develop/key-mappings), and [networking](https://docs.fabricmc.net/develop/networking) APIs. These are design references; JourneyMap is not required or bundled.
+
+## Build and tests
+
+Requires Java 25:
+
+```sh
+./gradlew :fabric:build
+```
+
+The installable artifact is `fabric/build/libs/command_waypoints-fabric-1.2.0+26.3.jar`. The normal build checks portal scaling, End boundaries, directional bearings against Minecraft's vector math, colored list formatting, and the real serverless login-command packet encoder/decoder.
+
+An opt-in test mod drives native screens and actual client/server payloads against a disposable local server:
+
+```sh
+./gradlew :fabric:integrationTestJar
+```
+
+It is built separately and is **not packaged in the production mod**. See [integration test instructions](docs/TESTING.md) for creation, editing, validation, private/public sharing, clickable import, permissions, visibility, deletion, quick add, persistence, and screenshot checks. README images are captures of the actual Minecraft 26.3 screens in the disposable test environment.

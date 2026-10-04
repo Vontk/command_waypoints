@@ -37,13 +37,9 @@ public class SubCommands {
 
     public static LiteralArgumentBuilder<CommandSourceStack> addSubCommands(LiteralArgumentBuilder<CommandSourceStack> original) {
         var vanillaPermission = original.getRequirement();
-        // Singleplayer navigation must work without enabling cheats. Keep the
-        // vanilla entity-editing branch and dedicated server access restricted.
-        // Minecraft probes restrictions with a serverless compilation source
-        // while serializing login commands. Mark this navigation root unrestricted
-        // for that probe; real dedicated-server sources still require permission.
-        var root = literal(original.getLiteral())
-            .requires(source -> source.getServer() == null || source.getServer().isSingleplayer() || vanillaPermission.test(source));
+        // Personal navigation is available in survival on every server. Vanilla
+        // entity edits and legacy shared waypoint edits keep their permissions.
+        var root = literal(original.getLiteral());
         for (var child : original.getArguments()) {
             var branch = child.createBuilder();
             child.getChildren().forEach(branch::then);
@@ -53,7 +49,29 @@ public class SubCommands {
         root
             .then(literal("add").then(argument("id", id()).executes(SubCommands::addWaypointNoArgs)))
             .then(literal("remove").then(argument("id", id()).suggests(SUGGEST_IDS).executes(SubCommands::removeWaypoint)))
-            .then(literal("list").executes(SubCommands::listWaypoints));
+             .then(literal("list").executes(ctx -> listWaypoints(ctx, null))
+                .then(argument("dimension", com.mojang.brigadier.arguments.StringArgumentType.word())
+                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"overworld", "nether", "end", "all"}, builder))
+                    .executes(ctx -> listWaypoints(ctx, com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "dimension")))))
+            .then(literal("accept").then(argument("token", net.minecraft.commands.arguments.UuidArgument.uuid())
+                .executes(ctx -> {
+                    try {
+                        var imported = com.minenash.command_waypoints.fabric.WaypointNetworking.accept(ctx.getSource().getPlayerOrException(), net.minecraft.commands.arguments.UuidArgument.getUuid(ctx, "token"));
+                        ctx.getSource().sendSuccess(() -> Component.literal("Added " + imported.displayName()), false);
+                        return 1;
+                    } catch (IllegalArgumentException error) { ctx.getSource().sendFailure(Component.literal(error.getMessage())); return 0; }
+                })));
+        root.then(literal("share").then(argument("id", id()).suggests(SUGGEST_IDS)
+            .then(argument("recipient", com.mojang.brigadier.arguments.StringArgumentType.word())
+                .suggests((ctx, builder) -> { var names = new java.util.ArrayList<>(ctx.getSource().getOnlinePlayerNames()); names.add("all"); return SharedSuggestionProvider.suggest(names, builder); })
+                .executes(ctx -> {
+                    var point = points(ctx).get(getId(ctx, "id"));
+                    if (point == null) { ctx.getSource().sendFailure(Component.literal("Waypoint does not exist.")); return 0; }
+                    try {
+                        com.minenash.command_waypoints.fabric.WaypointNetworking.share(ctx.getSource().getPlayerOrException(), point, com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "recipient"));
+                        return 1;
+                    } catch (IllegalArgumentException error) { ctx.getSource().sendFailure(Component.literal(error.getMessage())); return 0; }
+                }))));
 
         var destinations = argument("id", id());
         for (String dimension : new String[] {"overworld", "nether", "end"}) {
@@ -96,16 +114,25 @@ public class SubCommands {
 
     private static int create(CommandContext<CommandSourceStack> ctx, ServerLevel owner, BlockPos pos, boolean moveExisting) {
         var id = getId(ctx, "id");
-        var point = CommandWaypoints.points(owner).get(id);
+        var point = CommandWaypoints.points(owner, ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID()).get(id);
         if (point != null && !moveExisting) {
             ctx.getSource().sendFailure(Component.translatable("commands.waypoint.static.add.already_exists", id.toString()));
             return 0;
         }
-        if (point == null) point = new CommandWaypoint(UUID.randomUUID(), id, pos, new Waypoint.Icon(), 60000000, true);
-        else CommandWaypoints.remove(point);
+        if (point == null) {
+            var player = ctx.getSource().getPlayer();
+            if (player != null && com.minenash.command_waypoints.fabric.WaypointNetworking.accessible(player).stream().filter(p -> p.owner != null).count() >= 512) {
+                ctx.getSource().sendFailure(Component.literal("You can save up to 512 personal waypoints.")); return 0;
+            }
+            point = new CommandWaypoint(UUID.randomUUID(), id, pos, new Waypoint.Icon(), 60000000, true);
+            point.owner = ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID();
+        } else {
+            if (!canEdit(ctx, point)) return 0;
+            CommandWaypoints.remove(point);
+        }
         point.pos = pos;
         point.dimension = owner.dimension().identifier().toString();
-        CommandWaypoints.waypoints.computeIfAbsent(owner, level -> new HashMap<>()).put(id, point);
+        CommandWaypoints.put(owner, point);
         save(ctx);
         ctx.getSource().sendSuccess(() -> Component.translatable("commands.waypoint.static.add.success", id.toString()), false);
         return 1;
@@ -119,19 +146,30 @@ public class SubCommands {
         return 1;
     }
 
-    public static int listWaypoints(CommandContext<CommandSourceStack> ctx) {
-        var points = points(ctx);
-        var message = Component.empty();
-        if (points.isEmpty()) message.append("No waypoints in this dimension set.");
+    public static int listWaypoints(CommandContext<CommandSourceStack> ctx) { return listWaypoints(ctx, null); }
+    public static int listWaypoints(CommandContext<CommandSourceStack> ctx, String filter) {
+        java.util.List<CommandWaypoint> entries;
+        if (filter == null) entries = new java.util.ArrayList<>(points(ctx).values());
         else {
-            var sorted = points.values().stream().sorted(java.util.Comparator.comparing(point -> point.id.toString())).toList();
+            String dimension = WaypointData.dimensionId(filter);
+            if (!filter.equals("all") && ctx.getSource().getServer().getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, Identifier.tryParse(dimension) == null ? Identifier.withDefaultNamespace("invalid") : Identifier.parse(dimension))) == null) {
+                ctx.getSource().sendFailure(Component.literal("Unknown dimension: " + filter)); return 0;
+            }
+            var player = ctx.getSource().getPlayer();
+            entries = CommandWaypoints.all(p -> (p.owner == null || player != null && p.owner.equals(player.getUUID()))
+                && (filter.equals("all") || p.dimension.equals(dimension)));
+        }
+        var message = Component.empty();
+        if (entries.isEmpty()) message.append("No waypoints in this dimension set.");
+        else {
+            var sorted = entries.stream().sorted(java.util.Comparator.comparing(point -> point.id.toString())).toList();
             for (int i = 0; i < sorted.size(); i++) {
                 if (i > 0) message.append("\n");
-                message.append(sorted.get(i).listEntry());
+                message.append(sorted.get(i).listEntry(filter == null || filter.equals("all")));
             }
         }
         ctx.getSource().sendSuccess(() -> message, false);
-        return points.size();
+        return entries.size();
     }
     public static int modifyWayPointColor(CommandContext<CommandSourceStack> ctx) {
         var point = point(ctx);
@@ -179,7 +217,13 @@ public class SubCommands {
         var point = points(ctx).get(id);
         if (point == null)
             ctx.getSource().sendFailure(Component.translatable("commands.waypoint.static.doesnt_exist", id.toString()));
-        return point;
+        return point != null && canEdit(ctx, point) ? point : null;
+    }
+    private static boolean canEdit(CommandContext<CommandSourceStack> ctx, CommandWaypoint point) {
+        var player = ctx.getSource().getPlayer();
+        boolean allowed = player == null || com.minenash.command_waypoints.fabric.WaypointNetworking.editable(player, point);
+        if (!allowed) ctx.getSource().sendFailure(Component.literal("Only an operator can edit a legacy shared waypoint."));
+        return allowed;
     }
     private static void updateWaypoint(CommandContext<CommandSourceStack> ctx, CommandWaypoint waypoint) {
         save(ctx);
@@ -202,6 +246,6 @@ public class SubCommands {
     }
 
     public static Map<Identifier,CommandWaypoint> points(CommandContext<CommandSourceStack> ctx) {
-        return CommandWaypoints.points(ctx.getSource().getLevel());
+        return CommandWaypoints.points(ctx.getSource().getLevel(), ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID());
     }
 }

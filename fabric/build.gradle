@@ -5,7 +5,10 @@ plugins {
 
 base { archivesName = "$rootProject.archives_name-fabric" }
 
+repositories { maven { url "https://maven.terraformersmc.com/releases/" } }
+
 dependencies {
+    compileOnly "com.terraformersmc:modmenu:21.0.0"
     minecraft "net.minecraft:minecraft:$rootProject.minecraft_version"
     implementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
     implementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
@@ -61,3 +64,18 @@ tasks.register('permissionTest', JavaExec) {
     mainClass = 'com.minenash.command_waypoints.WaypointCommandPermissionsTest'
 }
 check.dependsOn permissionTest
+
+// Opt-in real Minecraft integration harness, never included in the installed mod.
+sourceSets {
+    integrationChecks {
+        java.srcDir 'src/integrationTest/java'
+        resources.srcDir 'src/integrationTest/resources'
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+tasks.register('integrationTestJar', Jar) {
+    dependsOn integrationChecksClasses
+    archiveBaseName = 'waypoint-integration-checks'
+    from sourceSets.integrationChecks.output
+}

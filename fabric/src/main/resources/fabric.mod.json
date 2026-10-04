@@ -3,7 +3,7 @@
   "id": "command_waypoints",
   "version": "${version}",
   "name": "Command Waypoints",
-  "description": "Allows you to create waypoints for the new Locator Bar feature via commands without the need of any entities",
+  "description": "Manage personal locator-bar waypoints through commands or a native GUI, with dimension filters and chat sharing.",
   "authors": [
     "Jakob (Minenash)"
   ],
@@ -25,6 +25,12 @@
   "entrypoints": {
     "main": [
       "com.minenash.command_waypoints.fabric.CommandWaypointsFabric"
+    ],
+    "client": [
+      "com.minenash.command_waypoints.client.WaypointClient"
+    ],
+    "modmenu": [
+      "com.minenash.command_waypoints.client.WaypointModMenu"
     ]
   },
   "mixins": [
@@ -35,5 +41,8 @@
     "fabricloader": ">=0.19.5",
     "java": ">=25",
     "fabric-api": ">=0.161.0+26.3"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }
