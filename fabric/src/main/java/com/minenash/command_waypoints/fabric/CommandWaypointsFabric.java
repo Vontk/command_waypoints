@@ -7,6 +7,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
@@ -25,13 +26,11 @@ public final class CommandWaypointsFabric implements ModInitializer {
 
         ServerLevelEvents.LOAD.register(Identifier.tryBuild("command_waypoints","read_attachments"), (server, level) -> {
             var points = level.getAttachedOrCreate(WAYPOINT_ATTACHMENT_TYPE, HashMap::new);
-            for (var point : points.values())
-                level.getWaypointManager().trackWaypoint(point);
-
-            CommandWaypoints.waypoints.put(level, new HashMap<>(points));
+            CommandWaypoints.load(level, points);
         });
 
         CommandWaypoints.init(CommandWaypointsFabric::save);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> CommandWaypoints.clear());
     }
 
     public static void save(Level level) {

@@ -37,3 +37,19 @@ publishing {
         }
     }
 }
+
+sourceSets {
+    coordinateChecks {
+        java.srcDir 'src/coordinateTest/java'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+// These checks exercise the conversion math without launching Minecraft.
+tasks.register('coordinateTest', JavaExec) {
+    dependsOn coordinateChecksClasses
+    classpath = sourceSets.coordinateChecks.runtimeClasspath
+    mainClass = 'com.minenash.command_waypoints.WaypointCoordinatesTest'
+}
+check.dependsOn coordinateTest

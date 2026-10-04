@@ -3,13 +3,13 @@ package com.minenash.command_waypoints;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import net.minecraft.world.scores.TeamColor;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.waypoints.Waypoint;
 import net.minecraft.world.waypoints.WaypointStyleAssets;
 
@@ -18,9 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.mojang.brigadier.arguments.BoolArgumentType.bool;
+import static com.mojang.brigadier.arguments.BoolArgumentType.getBool;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static java.lang.Math.floor;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.TeamColorArgument.teamColor;
@@ -29,138 +30,86 @@ import static net.minecraft.commands.arguments.HexColorArgument.getHexColor;
 import static net.minecraft.commands.arguments.HexColorArgument.hexColor;
 import static net.minecraft.commands.arguments.IdentifierArgument.getId;
 import static net.minecraft.commands.arguments.IdentifierArgument.id;
-import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos;
-import static net.minecraft.commands.arguments.coordinates.BlockPosArgument.getBlockPos;
 
 public class SubCommands {
-
-    public static final SuggestionProvider<CommandSourceStack> SUGGEST_STATIC_IDS = (ctx, builder) ->
+    public static final SuggestionProvider<CommandSourceStack> SUGGEST_IDS = (ctx, builder) ->
         SharedSuggestionProvider.suggestResource(points(ctx).keySet(), builder);
 
     public static LiteralArgumentBuilder<CommandSourceStack> addSubCommands(LiteralArgumentBuilder<CommandSourceStack> original) {
+        var root = original
+            .then(literal("add").then(argument("id", id()).executes(SubCommands::addWaypointNoArgs)))
+            .then(literal("remove").then(argument("id", id()).suggests(SUGGEST_IDS).executes(SubCommands::removeWaypoint)))
+            .then(literal("list").executes(SubCommands::listWaypoints));
 
-        return original.then(literal("static")
-            .then(literal("add")
-                .then(argument("id", id()).executes(SubCommands::addWaypointNoArgs)
-                    .then(argument("location", blockPos()).executes(SubCommands::addWaypointPos)
-                        .then(literal("color")
-                            .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)
-                                .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)
-                                    .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)))))
-                                .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
-                                    .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)))))
-                            ))
-                            .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)
-                                .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)
-                                    .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)))))
-                                .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
-                                    .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)))))
-                            ))
-                        .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)
-                            .then(literal("color")
-                                .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)
-                                    .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)))))
-                                .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)
-                                    .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)))))
-                            .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
-                                .then(literal("color")
-                                    .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)))
-                                    .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)))
-                            ))))
-                        .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::addWaypoint)
-                            .then(literal("color")
-                                .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)
-                                    .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)))))
-                                .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)
-                                    .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)))))
-                            .then(literal("style").then(argument("style", id()).executes(SubCommands::addWaypoint)
-                                .then(literal("color")
-                                    .then(literal("hex").then(argument("color", hexColor()).executes(SubCommands::addWaypoint)))
-                                    .then(argument("color", teamColor()).executes(SubCommands::addWaypoint)))
-                            ))
-                        ))
-                    )))
-            .then(literal("modify")
-                .then(argument("id", id()).suggests(SUGGEST_STATIC_IDS)
-                .then(literal("color")
-                    .then(literal("hex").then(argument("hex_color", hexColor()).executes(SubCommands::modifyWayPointHexColor)))
-                    .then(argument("color", teamColor()).executes(SubCommands::modifyWayPointColor)))
-                .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::modifyWayPointRange)))
-                .then(literal("location").then(argument("location", blockPos()).executes(SubCommands::modifyWayPointPos)))
-                .then(literal("style")
-                    .then(literal("reset").executes(SubCommands::modifyWayPointResetStyle))
-                    .then(literal("set")
-                        .then(argument("style", id()).executes(SubCommands::modifyWayPointStyle))))))
-            .then(literal("remove")
-                .then(argument("id", id()).suggests(SUGGEST_STATIC_IDS).executes(SubCommands::removeWaypoint))));
+        var destinations = argument("id", id());
+        for (String dimension : new String[] {"overworld", "nether", "end"}) {
+            destinations.then(literal(dimension)
+                .then(argument("x", integer(-30000000, 30000000))
+                    .then(argument("z", integer(-30000000, 30000000))
+                        .executes(ctx -> gotoWaypoint(ctx, dimension)))));
+        }
+        root.then(literal("goto").then(destinations));
+
+        return root.then(argument("id", id()).suggests(SUGGEST_IDS)
+            .then(literal("visible").then(argument("visible", bool()).executes(SubCommands::setVisible)))
+            .then(literal("color")
+                .then(literal("hex").then(argument("hex_color", hexColor()).executes(SubCommands::modifyWayPointHexColor)))
+                .then(argument("color", teamColor()).executes(SubCommands::modifyWayPointColor)))
+            .then(literal("range").then(argument("range", integer(0, 60000000)).executes(SubCommands::modifyWayPointRange)))
+            .then(literal("style")
+                .then(literal("reset").executes(SubCommands::modifyWayPointResetStyle))
+                .then(literal("set").then(argument("style", id()).executes(SubCommands::modifyWayPointStyle)))));
     }
-
-    public static int addWaypoint(CommandContext<CommandSourceStack> ctx) {
-        var location = getBlockPos(ctx, "location");
-
-        var color = getArg(ctx, "color", TeamColor.class);
-        var hexColor = getArg(ctx, "hex_color", Integer.class);
-        var style = getArg(ctx, "style", Identifier.class);
-        var range = getArg(ctx, "range", Integer.class);
-
-        return addWaypoint(ctx, location,
-            hexColor != null ? hexColor : color != null ? color.rgb() : null,
-            range != null ? range : 60000000,
-            style);
-    }
-
-    public static <V> V getArg(CommandContext<CommandSourceStack> ctx, String name, Class<V> clazz) {
-        try { return ctx.getArgument(name, clazz); }
-        catch (Exception ignored) { return null; }
-    }
-
 
     public static int addWaypointNoArgs(CommandContext<CommandSourceStack> ctx) {
         var p = ctx.getSource().getPosition();
-        var pos = new BlockPos((int)floor(p.x), (int)floor(p.y), (int)floor(p.z));
-
-        return addWaypoint(ctx, pos, null, 60000000, null);
+        return create(ctx, ctx.getSource().getLevel(), BlockPos.containing(p.x, 0, p.z), false);
     }
 
-    public static int addWaypointPos(CommandContext<CommandSourceStack> ctx) {
-        return addWaypoint(ctx, getBlockPos(ctx, "location"), null, 60000000, null);
+    public static int gotoWaypoint(CommandContext<CommandSourceStack> ctx, String dimension) {
+        var key = switch (dimension) {
+            case "nether" -> net.minecraft.world.level.Level.NETHER;
+            case "end" -> net.minecraft.world.level.Level.END;
+            default -> net.minecraft.world.level.Level.OVERWORLD;
+        };
+        ServerLevel target = ctx.getSource().getServer().getLevel(key);
+        if (target == null) {
+            ctx.getSource().sendFailure(Component.literal("Dimension is unavailable: " + dimension));
+            return 0;
+        }
+        return create(ctx, target, new BlockPos(getInteger(ctx, "x"), 0, getInteger(ctx, "z")), true);
     }
 
-    public static int addWaypoint(CommandContext<CommandSourceStack> ctx, BlockPos pos, Integer color, int range, Identifier style) {
-        var manager = ctx.getSource().getLevel().getWaypointManager();
+    private static int create(CommandContext<CommandSourceStack> ctx, ServerLevel owner, BlockPos pos, boolean moveExisting) {
         var id = getId(ctx, "id");
-
-        var point = points(ctx).get(id);
-        if (point != null) {
+        var point = CommandWaypoints.points(owner).get(id);
+        if (point != null && !moveExisting) {
             ctx.getSource().sendFailure(Component.translatable("commands.waypoint.static.add.already_exists", id.toString()));
             return 0;
         }
-
-        var icon = new Waypoint.Icon();
-        if (color != null)
-            icon.color = Optional.of(color);
-        if (style != null)
-            icon.style = ResourceKey.create(WaypointStyleAssets.ROOT_ID, style);
-
-        point = new CommandWaypoint(UUID.randomUUID(), id, pos, icon, range);
-        manager.trackWaypoint(point);
-
-        var points = points(ctx);
-        points.put(id, point);
-        CommandWaypoints.waypoints.put(ctx.getSource().getLevel(), points);
-
+        if (point == null) point = new CommandWaypoint(UUID.randomUUID(), id, pos, new Waypoint.Icon(), 60000000, true);
+        else CommandWaypoints.remove(point);
+        point.pos = pos;
+        point.dimension = owner.dimension().identifier().toString();
+        CommandWaypoints.waypoints.computeIfAbsent(owner, level -> new HashMap<>()).put(id, point);
         save(ctx);
-        ctx.getSource().sendSuccess(() -> Component.translatable("commands.waypoint.static.add.success"), false);
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.waypoint.static.add.success", id.toString()), false);
         return 1;
     }
 
-    public static int modifyWayPointPos(CommandContext<CommandSourceStack> ctx) {
+    public static int setVisible(CommandContext<CommandSourceStack> ctx) {
         var point = point(ctx);
-        if (point == null)
-            return 0;
-        point.pos = getBlockPos(ctx, "location");
+        if (point == null) return 0;
+        point.visible = getBool(ctx, "visible");
         updateWaypoint(ctx, point);
         return 1;
+    }
+
+    public static int listWaypoints(CommandContext<CommandSourceStack> ctx) {
+        var points = points(ctx);
+        ctx.getSource().sendSuccess(() -> Component.literal(points.isEmpty() ? "No waypoints in this dimension set." :
+            points.values().stream().map(CommandWaypoint::toString).sorted().collect(java.util.stream.Collectors.joining("\n"))), false);
+        return points.size();
     }
     public static int modifyWayPointColor(CommandContext<CommandSourceStack> ctx) {
         var point = point(ctx);
@@ -174,7 +123,7 @@ public class SubCommands {
         var point = point(ctx);
         if (point == null)
             return 0;
-        point.icon.color = Optional.of(getHexColor(ctx, "color"));
+        point.icon.color = Optional.of(getHexColor(ctx, "hex_color"));
         updateWaypoint(ctx, point);
         return 1;
     }
@@ -211,26 +160,15 @@ public class SubCommands {
         return point;
     }
     private static void updateWaypoint(CommandContext<CommandSourceStack> ctx, CommandWaypoint waypoint) {
-        var manager = ctx.getSource().getLevel().getWaypointManager();
-        manager.untrackWaypoint(waypoint);
-        manager.trackWaypoint(waypoint);
         save(ctx);
         ctx.getSource().sendSuccess(() -> Component.translatable("commands.waypoint.static.modify.success"), false);
     }
 
 
     public static int removeWaypoint(CommandContext<CommandSourceStack> ctx) {
-        var manager = ctx.getSource().getLevel().getWaypointManager();
-        var id = getId(ctx, "id");
-
-        var points = points(ctx);
-        var point = points.get(id);
-        if (point == null)
-            return 0;
-
-        manager.untrackWaypoint(point);
-        points.remove(id);
-        CommandWaypoints.waypoints.put(ctx.getSource().getLevel(), points);
+        var point = point(ctx);
+        if (point == null) return 0;
+        CommandWaypoints.remove(point);
 
         save(ctx);
         ctx.getSource().sendSuccess(() -> Component.translatable("commands.waypoint.static.remove.success"), false);
@@ -238,10 +176,10 @@ public class SubCommands {
     }
 
     public static void save(CommandContext<CommandSourceStack> ctx) {
-        CommandWaypoints.saveWaypoints.accept(ctx.getSource().getLevel());
+        CommandWaypoints.save();
     }
 
     public static Map<Identifier,CommandWaypoint> points(CommandContext<CommandSourceStack> ctx) {
-        return CommandWaypoints.waypoints.getOrDefault(ctx.getSource().getLevel(), new HashMap<>());
+        return CommandWaypoints.points(ctx.getSource().getLevel());
     }
 }

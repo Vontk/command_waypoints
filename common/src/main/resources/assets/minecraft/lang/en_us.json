@@ -1,7 +1,7 @@
 {
-  "commands.waypoint.static.doesnt_exist": "No static waypoint with ID %s exists",
-  "commands.waypoint.static.add.already_exists": "A static waypoint with ID %s already exists",
-  "commands.waypoint.static.add.success": "Static waypoint created",
-  "commands.waypoint.static.modify.success": "Static waypoint modified",
-  "commands.waypoint.static.remove.success": "Static waypoint removed"
+  "commands.waypoint.static.doesnt_exist": "No waypoint with ID %s exists",
+  "commands.waypoint.static.add.already_exists": "A waypoint with ID %s already exists",
+  "commands.waypoint.static.add.success": "Waypoint %s created",
+  "commands.waypoint.static.modify.success": "Waypoint modified",
+  "commands.waypoint.static.remove.success": "Waypoint removed"
 }
